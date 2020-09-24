@@ -28,7 +28,7 @@ def MLP(user_num, item_num, latent_dim = 10, units = [20, 10]):
   results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results);
   return tf.keras.Model(inputs = (users, items), outputs = results);
 
-def Fusion(user_num, item_num, latent_dim = 10, units = [20, 10]):
+def NeuMF(user_num, item_num, latent_dim = 10, units = [20, 10]):
 
   users = tf.keras.Input((1,), dtype = tf.int32); # users.shape = (batch, 1)
   items = tf.keras.Input((1,), dtype = tf.int32); # items.shape = (batch, 1)
@@ -55,8 +55,8 @@ if __name__ == "__main__":
   gmf.save('gmf.h5');
   mlp = MLP(10,100);
   mlp.save('mlp.h5');
-  fusion = Fusion(10,100);
-  fusion.save('fusion.h5');
+  neumf = NeuMF(10,100);
+  neumf.save('neumf.h5');
   tf.keras.utils.plot_model(model = gmf, to_file = 'GMF.png', show_shapes = True, dpi = 64);
   tf.keras.utils.plot_model(model = mlp, to_file = 'MLP.png', show_shapes = True, dpi = 64);
-  tf.keras.utils.plot_model(model = fusion, to_file = 'Fusion.png', show_shapes = True, dpi = 64);
+  tf.keras.utils.plot_model(model = neumf, to_file = 'NeuMF.png', show_shapes = True, dpi = 64);
