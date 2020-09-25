@@ -6,6 +6,21 @@ import pickle;
 import numpy as np;
 import tensorflow as tf;
 
+def parse_function(serialized_example):
+
+  feature = tf.io.parse_single_example(
+    serialized_example,
+    features = {
+      'user': tf.io.FixedLenFeature((), dtype = tf.int64),
+      'item': tf.io.FixedLenFeature((), dtype = tf.int64),
+      'rating': tf.io.FixedLenFeature((), dtype = tf.float32)
+    }
+  );
+  user = feature['user'];
+  item = feature['item'];
+  rating = feature['rating'];
+  return user, item, rating;
+
 def create_dataset(filename):
 
   if not exists('datasets'): mkdir('datasets');
