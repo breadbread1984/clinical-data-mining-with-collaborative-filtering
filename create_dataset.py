@@ -18,7 +18,7 @@ def create_dataset(filename):
       num_items = max(num_items, i);
       line = f.readline();
   spec = {'num_users': num_users, 'num_items': num_items};
-  with open(filename + '.pkl', 'wb') as f:
+  with open(split(filename)[-1] + '.pkl', 'wb') as f:
     f.write(pickle.dumps(spec));
   writer = tf.io.TFRecordWriter(join('datasets', split(filename)[-1] + ".trainset.tfrecord"));
   with open(filename + '.train.rating', 'r') as f:
@@ -34,6 +34,7 @@ def create_dataset(filename):
         }
       ));
       writer.write(trainsample.SerializeToString());
+      line = f.readline();
   writer.close();
   writer = tf.io.TFRecordWriter(join('datasets', split(filename)[-1] + '.testset.tfrecord'));
   with open(filename + '.test.rating', 'r') as f:
@@ -49,6 +50,7 @@ def create_dataset(filename):
         }
       ));
       writer.write(trainsample.SerializeToString());
+      line = f.readline();
   writer.close();
   writer = tf.io.TFRecordWriter(join('datasets', split(filename)[-1] + '.negative.tfrecord'));
   with open(filename + '.test.negative', 'r') as f:
@@ -61,6 +63,7 @@ def create_dataset(filename):
         }
       ));
       writer.write(trainsample.SerializeToString());
+      line = f.readline();
   writer.close();
 
 if __name__ == "__main__":
