@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from os.path import exists;
 import tensorflow as tf
 
 def GMF(user_num, item_num, latent_dim = 10):
@@ -34,13 +35,14 @@ def NeuMF(user_num, item_num, latent_dim = 10, units = [20, 10]):
 
   users = tf.keras.Input((1,), dtype = tf.int32); # users.shape = (batch, 1)
   items = tf.keras.Input((1,), dtype = tf.int32); # items.shape = (batch, 1)
-  gmf = GMF(user_num, item_num, latent_dim);
-  mlp = MLP(user_num, item_num, latent_dim, units);
+  gmf = tf.keras.models.load_model('gmf.h5', compile = False) if exists('gmf.h5') else GMF(user_num, item_num, latent_dim);
+  mlp = tf.keras.models.load_model('mlp.h5', compile = False) if exists('mlp.h5') else MLP(user_num, item_num, latent_dim, units);
   _, mf_results = gmf([users, items]);
   _, mlp_results = mlp([users, items]);
-  results = tf.keras.layers.Concatenate(axis = -1, name = 'logits')([mf_results, mlp_results]);
+  results = tf.keras.layers.Concatenate(axis = -1)([mf_results, mlp_results]);
+  logits = results;
   results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results);
-  return tf.keras.Model(inputs = (users, items), outputs = results);
+  return tf.keras.Model(inputs = (users, items), outputs = (results, logits));
 
 if __name__ == "__main__":
 
@@ -54,4 +56,3 @@ if __name__ == "__main__":
   tf.keras.utils.plot_model(model = gmf, to_file = 'GMF.png', show_shapes = True, dpi = 64);
   tf.keras.utils.plot_model(model = mlp, to_file = 'MLP.png', show_shapes = True, dpi = 64);
   tf.keras.utils.plot_model(model = neumf, to_file = 'NeuMF.png', show_shapes = True, dpi = 64);
-  print(neumf.get_layer('logits').output);
