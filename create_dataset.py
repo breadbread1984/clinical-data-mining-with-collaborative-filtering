@@ -3,6 +3,7 @@
 from os import mkdir;
 from os.path import exists, join, split;
 import pickle;
+import numpy as np;
 import tensorflow as tf;
 
 def create_dataset(filename):
@@ -18,7 +19,7 @@ def create_dataset(filename):
       num_items = max(num_items, i);
       line = f.readline();
   spec = {'num_users': num_users, 'num_items': num_items};
-  with open(split(filename)[-1] + '.pkl', 'wb') as f:
+  with open(join('datasets', split(filename)[-1]) + '.pkl', 'wb') as f:
     f.write(pickle.dumps(spec));
   writer = tf.io.TFRecordWriter(join('datasets', split(filename)[-1] + ".trainset.tfrecord"));
   with open(filename + '.train.rating', 'r') as f:
@@ -59,7 +60,7 @@ def create_dataset(filename):
       arr = line.split('\t');
       trainsample = tf.train.Example(features = tf.train.Features(
         feature = {
-          'negatives': tf.train.Feature(int64_list = tf.train.Int64List(value = arr[1:]))
+          'negatives': tf.train.Feature(int64_list = tf.train.Int64List(value = np.array(arr[1:]).astype('int')))
         }
       ));
       writer.write(trainsample.SerializeToString());
