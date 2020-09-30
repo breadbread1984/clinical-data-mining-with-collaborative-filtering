@@ -20,4 +20,10 @@ python3 pretrain.py (GMF|MLP) (ml-1m|pinterest)
 
 copy the generated model.h5 to gmf.h5 and mlp.h5 manually.
 
+## train NeuMF model
 
+find the optimal hyper parameter first with the following command
+
+```python
+python3 train.py
+```
