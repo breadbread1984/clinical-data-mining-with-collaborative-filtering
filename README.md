@@ -27,3 +27,21 @@ find the optimal hyper parameter first with the following command
 ```python
 python3 train.py
 ```
+
+## quantilize medical clinic data
+
+quantilize with the following command
+
+```python
+python3 quantilize.py
+```
+
+## train NeuMF on the clinic data
+
+train with 
+
+```python
+python3 train_clinic.py
+```
+
+
