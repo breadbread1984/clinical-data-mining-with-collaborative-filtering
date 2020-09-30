@@ -21,11 +21,11 @@ def create_models(samples, dictionary):
   for key, labels in dictionary.items():
     if labels is None:
       # regression;
-      attr_nets[key] = Regression(8);
+      attr_nets[key] = Regression(16);
     else:
       # classification
       # NOTE: class num doesnt include blank labels
-      attr_nets[key] = Classification(8, len(labels) - 1);
+      attr_nets[key] = Classification(16, len(labels) - 1);
   return neumf, attr_nets;
 
 def train(neumf, attr_nets, samples, dictionary):
@@ -47,6 +47,7 @@ def train(neumf, attr_nets, samples, dictionary):
   # train
   while True:
     for jdx, (key, labels) in enumerate(dictionary.items()):
+      print("training " + key);
       users = list();
       items = list();
       observations = list();
