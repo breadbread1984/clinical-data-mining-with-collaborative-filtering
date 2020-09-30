@@ -27,7 +27,8 @@ def train(neumf, dataset):
 
   trainset = tf.data.TFRecordDataset(join('datasets', dataset) + '.trainset.tfrecord').map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
   testset = tf.data.TFRecordDataset(join('datasets', dataset) + '.testset.tfrecord').map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
-  neumf.fit(trainset, epochs = 100, validation_data = testset);
+  neumf.fit(trainset, epochs = 5, validation_data = testset);
+  neumf.save('neumf.h5');
 
 if __name__ == "__main__":
 
