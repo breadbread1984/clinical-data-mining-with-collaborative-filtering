@@ -49,28 +49,28 @@ def train(neumf, attr_nets, samples, dictionary):
     for jdx, (key, labels) in enumerate(dictionary.items()):
       users = list();
       items = list();
-      labelss = list();
+      observations = list();
       for idx, sample in enumerate(samples):
         if labels is None and sample[key] is None or \
             labels is not None and sample[key] == 0: continue;
         users.append(idx);
         items.append(jdx);
-        labelss.append(sample[key] if labels is None else sample[key] - 1);
+        observations.append(sample[key] if labels is None else sample[key] - 1);
       users = tf.reshape(users, (-1, 1));
       items = tf.reshape(items, (-1, 1));
-      labelss = tf.reshape(labelss, (-1,));
+      observations = tf.reshape(observations, (-1,));
       if labels is None:
         # regression
         with tf.GradientTape(persistent = True) as tape:
           _, features = neumf([users, items]); # features.shape = (non-blank line num, latent_dim)
           preds = attr_nets[key](features); # preds.shape = (non-blank line num, 1)
-          loss = reg_loss(labelss, preds); # loss.shape = ()
+          loss = reg_loss(observations, preds); # loss.shape = ()
       else:
         # classification
         with tf.GradientTape(persistent = True) as tape:
           _, features = neumf([users, items]); # features.shape = (non-blank line num, latent_dim)
           preds = attr_nets[key](features); # preds.shape = (non-blank line num, 1)
-          loss = cls_loss(labelss, preds); # loss.shape = ()
+          loss = cls_loss(observations, preds); # loss.shape = ()
       # report loss
       metrics[key].update_state(loss);
       with log.as_default():
