@@ -18,14 +18,14 @@ def create_models(samples, dictionary):
 
   neumf = NeuMF(len(samples), len(dictionary), 0.5, 8, [64,32,16,8]);
   attr_nets = dict();
-  for key, value in dictionary.items():
-    if value is None:
+  for key, labels in dictionary.items():
+    if labels is None:
       # regression;
       attr_nets[key] = Regression(8, name = key);
     else:
       # classification
-      # NOTE: class num doesnt include blank value
-      attr_nets[key] = Classification(8, len(value) - 1, name = key);
+      # NOTE: class num doesnt include blank labels
+      attr_nets[key] = Classification(8, len(labels) - 1, name = key);
   return neumf, attr_nets;
 
 def train(neumf, attr_nets, samples, dictionary):
@@ -46,31 +46,31 @@ def train(neumf, attr_nets, samples, dictionary):
   cls_loss = tf.keras.losses.SparseCategoricalCrossentropy();
   # train
   while True:
-    for jdx, (key, value) in enumerate(dictionary.items()):
+    for jdx, (key, labels) in enumerate(dictionary.items()):
       users = list();
       items = list();
-      values = list();
+      labelss = list();
       for idx, sample in enumerate(samples):
-        if value is None and sample[key] is None or \
-            value is not None and sample[key] == 0: continue;
+        if labels is None and sample[key] is None or \
+            labels is not None and sample[key] == 0: continue;
         users.append(idx);
         items.append(jdx);
-        values.append(sample[key] if value is None else sample[key] - 1);
+        labelss.append(sample[key] if labels is None else sample[key] - 1);
       users = tf.reshape(users, (-1, 1));
       items = tf.reshape(items, (-1, 1));
-      values = tf.reshape(values, (-1,));
-      if value is None:
+      labelss = tf.reshape(labelss, (-1,));
+      if labels is None:
         # regression
         with tf.GradientTape(persistent = True) as tape:
           _, features = neumf([users, items]); # features.shape = (non-blank line num, latent_dim)
           preds = attr_nets[key](features); # preds.shape = (non-blank line num, 1)
-          loss = reg_loss(values, preds); # loss.shape = ()
+          loss = reg_loss(labelss, preds); # loss.shape = ()
       else:
         # classification
         with tf.GradientTape(persistent = True) as tape:
           _, features = neumf([users, items]); # features.shape = (non-blank line num, latent_dim)
           preds = attr_nets[key](features); # preds.shape = (non-blank line num, 1)
-          loss = cls_loss(values, preds); # loss.shape = ()
+          loss = cls_loss(labelss, preds); # loss.shape = ()
       # report loss
       metrics[key].update_state(loss);
       with log.as_default():
