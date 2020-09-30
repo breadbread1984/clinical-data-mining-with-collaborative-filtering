@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+from os import mkdir;
+from os.path import exists, join;
 import pickle;
 import tensorflow as tf;
 from models import NeuMF, Regression, Classification;
@@ -28,7 +30,60 @@ def create_models(samples, dictionary):
 
 def train(neumf, attr_nets, samples, dictionary):
 
-  
+  # optimizer
+  optimizers = {key: tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5)) for key in dictionary};
+  optimizers['neumf'] = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
+  # checkpoints
+  if False == exists('checkpoints'): mkdir('checkpoints');
+  checkpoint = tf.train.Checkpoint(neumf = neumf, attr_nets = attr_nets, optimizers = optimizers);
+  checkpoint.restore(tf.train.latest_checkpoit('checkpoints'));
+  # log
+  log = tf.summary.create_file_writer('checkpoints');
+  # metrics
+  metrics = {key: tf.keras.metrics.Mean(name = key, dtype = tf.float32) for key in dictionary};
+  # loss
+  reg_loss = tf.keras.losses.MeanSuaredError();
+  cls_loss = tf.keras.losses.SparseCategoricalCrossentropy();
+  # train
+  while True:
+    for jdx, (key, value) in enumerate(dictionary.items()):
+      users = list();
+      items = list();
+      values = list();
+      for idx, sample in enumerate(samples):
+        if value is None and sample[key] is None or \
+            value is not None and sample[key] == 0: continue;
+        users.append(idx);
+        items.append(jdx);
+        values.append(sample[key] if value is None else sample[key] - 1);
+      users = tf.reshape(users, (-1, 1));
+      items = tf.reshape(items, (-1, 1));
+      values = tf.reshape(values, (-1,));
+      if value is None:
+        # regression
+        with tf.GradientTape(persistent = True) as tape:
+          _, features = neumf([users, items]); # features.shape = (non-blank line num, latent_dim)
+          preds = attr_nets[key](features); # preds.shape = (non-blank line num, 1)
+          loss = reg_loss(values, preds); # loss.shape = ()
+      else:
+        # classification
+        with tf.GradientTape(persistent = True) as tape:
+          _, features = neumf([users, items]); # features.shape = (non-blank line num, latent_dim)
+          preds = attr_nets[key](features); # preds.shape = (non-blank line num, 1)
+          loss = cls_loss(values, preds); # loss.shape = ()
+      # report loss
+      metrics[key].update_state(loss);
+      with log.as_default():
+        tf.summary.scalar(key, metrics[key].result(), step = optimizers[key].iterations);
+      print('Step #%d %s Loss: %.6f' % (optimizers[key].iterations, key, metrics[key].result()));
+      if tf.equal(optimizers[key].iterations % 10, 0): metrics[key].reset_states();
+      # gradient back propagation
+      grads = tape.gradient(loss, attr_nets[key].trainable_variables);
+      optimizers[key].apply_gradients(zip(grads, attr_nets[key].trainable_variables));
+      grads = tape.gradient(loss, neumf.trainable_variables);
+      optimizers['neumf'].apply_gradients(zip(grads, neumf.trainable_variables));
+      if tf.equal(optimizers[key].iterations % 10 * len(dictionary), 0):
+        checkpoint.save(join('checkpoints', 'ckpt'));
 
 if __name__ == "__main__":
   
