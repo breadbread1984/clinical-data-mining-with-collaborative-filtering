@@ -46,8 +46,7 @@ labels_collection = {
   'Race and origin recode (NHW, NHB, NHAIAN, NHAPI, Hispanic)': {'Blank(s)': 0},
   'Age at diagnosis': None, # None represents blank
   'Insurance Recode (2007+)': {'Blank(s)': 0},
-  'Marital status at diagnosis': {'Blank(s)': 0},
-  'Patient ID': dict()
+  'Marital status at diagnosis': {'Blank(s)': 0}
 };
 
 def read(filename):

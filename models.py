@@ -78,6 +78,19 @@ def NeuMF(user_num, item_num, alpha = 0.5, latent_dim = 10, units = [20, 10]):
   results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2(), name = "neumf_dense")(results);
   return CustomModel(inputs = (users, items), outputs = (results, logits));
 
+def Regression(latent_dim = 10, name = None):
+
+  inputs = tf.keras.Input((latent_dim,)); # inputs.shape = (batch, latent_dim)
+  results = tf.keras.layers.Dense(units = 1, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2(), name = name)(inputs);
+  return tf.keras.Model(inputs = inputs, outputs = results);
+
+def Classification(latent_dim = 10, class_num = 10, name = None):
+
+  inputs = tf.keras.Input((latent_dim,)); # inputs.shape = (batch, latent_dim)
+  results = tf.keras.layers.Dense(units = class_num, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2(), name = name)(inputs);
+  results = tf.keras.layers.Softmax()(results);
+  return tf.keras.Model(inputs = inputs, outputs = results);
+
 if __name__ == "__main__":
 
   assert tf.executing_eagerly();
