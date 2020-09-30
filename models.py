@@ -7,28 +7,28 @@ def GMF(user_num, item_num, latent_dim = 10):
 
   users = tf.keras.Input((1,), dtype = tf.int32); # users.shape = (batch, 1)
   items = tf.keras.Input((1,), dtype = tf.int32); # items.shape = (batch, 1)
-  users_embed = tf.keras.layers.Embedding(user_num, latent_dim, embeddings_regularizer = tf.keras.regularizers.L2())(users); # users_embed.shape = (batch, 1, latent_dim)
-  items_embed = tf.keras.layers.Embedding(item_num, latent_dim, embeddings_regularizer = tf.keras.regularizers.L2())(items); # items_embed.shape = (batch, 1, latent_dim)
-  users_embed = tf.keras.layers.Flatten()(users_embed); # users_embed.shape = (batch, latent_dim)
-  items_embed = tf.keras.layers.Flatten()(items_embed); # items_embed.shape = (batchm latent_dim)
-  results = tf.keras.layers.Lambda(lambda x: x[0] * x[1])([users_embed, items_embed]); # results.shape = (batch, dim)
+  users_embed = tf.keras.layers.Embedding(user_num, latent_dim, embeddings_regularizer = tf.keras.regularizers.L2(), name = "gmf_user_embed")(users); # users_embed.shape = (batch, 1, latent_dim)
+  items_embed = tf.keras.layers.Embedding(item_num, latent_dim, embeddings_regularizer = tf.keras.regularizers.L2(), name = "gmf_item_embed")(items); # items_embed.shape = (batch, 1, latent_dim)
+  users_embed = tf.keras.layers.Flatten(name = "gmf_user_flatten")(users_embed); # users_embed.shape = (batch, latent_dim)
+  items_embed = tf.keras.layers.Flatten(name = "gmf_item_flatten")(items_embed); # items_embed.shape = (batchm latent_dim)
+  results = tf.keras.layers.Lambda(lambda x: x[0] * x[1], name = "gmf_logits")([users_embed, items_embed]); # results.shape = (batch, dim)
   logits = results;
-  results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results); # results.shape = (batch, 1)
+  results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2(), name = "gmf_dense")(results); # results.shape = (batch, 1)
   return tf.keras.Model(inputs = (users, items), outputs = (results, logits));
 
 def MLP(user_num, item_num, units = [20, 10]):
 
   users = tf.keras.Input((1,), dtype = tf.int32); # users.shape = (batch, 1)
   items = tf.keras.Input((1,), dtype = tf.int32); # items.shape = (batch, 1)
-  users_embed = tf.keras.layers.Embedding(user_num, units[0] // 2, embeddings_regularizer = tf.keras.regularizers.L2())(users); # users_embed.shape = (batch, 1, latent_dim)
-  items_embed = tf.keras.layers.Embedding(item_num, units[0] // 2, embeddings_regularizer = tf.keras.regularizers.L2())(items); # items_embed.shape = (batch, 1, latent_dim)
-  users_embed = tf.keras.layers.Flatten()(users_embed); # users_embed.shape = (batch, latent_dim)
-  items_embed = tf.keras.layers.Flatten()(items_embed); # items_embed.shape = (batch, latent_dim)
-  results = tf.keras.layers.Concatenate(axis = -1)([users_embed, items_embed]); # results.shape = (batch, 2 * latent_dim)
+  users_embed = tf.keras.layers.Embedding(user_num, units[0] // 2, embeddings_regularizer = tf.keras.regularizers.L2(), name = "mlp_user_embed")(users); # users_embed.shape = (batch, 1, latent_dim)
+  items_embed = tf.keras.layers.Embedding(item_num, units[0] // 2, embeddings_regularizer = tf.keras.regularizers.L2(), name = "mlp_item_embed")(items); # items_embed.shape = (batch, 1, latent_dim)
+  users_embed = tf.keras.layers.Flatten(name = "mlp_user_flatten")(users_embed); # users_embed.shape = (batch, latent_dim)
+  items_embed = tf.keras.layers.Flatten(name = "mlp_item_flatten")(items_embed); # items_embed.shape = (batch, latent_dim)
+  results = tf.keras.layers.Concatenate(axis = -1, name = "mlp_concat")([users_embed, items_embed]); # results.shape = (batch, 2 * latent_dim)
   for i in range(1, len(units)):
-    results = tf.keras.layers.Dense(units = units[i], kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results);
+    results = tf.keras.layers.Dense(units = units[i], kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2(), name = "mlp_dense_" + str(i))(results);
   logits = results;
-  results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results);
+  results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2(), name = "mlp_dense")(results);
   return tf.keras.Model(inputs = (users, items), outputs = (results, logits));
 
 class CustomModel(tf.keras.Model):
@@ -60,9 +60,9 @@ def NeuMF(user_num, item_num, alpha = 0.5, latent_dim = 10, units = [20, 10]):
   mlp = tf.keras.models.load_model('mlp.h5', compile = False) if exists('mlp.h5') else MLP(user_num, item_num, units);
   _, mf_results = gmf([users, items]);
   _, mlp_results = mlp([users, items]);
-  results = tf.keras.layers.Lambda(lambda x, a: tf.concat([a * x[0], (1-a) * x[1]], axis = -1), arguments = {'a': alpha})([mf_results, mlp_results]);
+  results = tf.keras.layers.Lambda(lambda x, a: tf.concat([a * x[0], (1-a) * x[1]], axis = -1), arguments = {'a': alpha}, name = "neumf_logits")([mf_results, mlp_results]);
   logits = results;
-  results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results);
+  results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2(), name = "neumf_dense")(results);
   return CustomModel(inputs = (users, items), outputs = (results, logits));
 
 if __name__ == "__main__":
