@@ -21,11 +21,11 @@ def create_models(samples, dictionary):
   for key, labels in dictionary.items():
     if labels is None:
       # regression;
-      attr_nets[key] = Regression(8, name = key);
+      attr_nets[key] = Regression(8);
     else:
       # classification
       # NOTE: class num doesnt include blank labels
-      attr_nets[key] = Classification(8, len(labels) - 1, name = key);
+      attr_nets[key] = Classification(8, len(labels) - 1);
   return neumf, attr_nets;
 
 def train(neumf, attr_nets, samples, dictionary):
@@ -36,13 +36,13 @@ def train(neumf, attr_nets, samples, dictionary):
   # checkpoints
   if False == exists('checkpoints'): mkdir('checkpoints');
   checkpoint = tf.train.Checkpoint(neumf = neumf, attr_nets = attr_nets, optimizers = optimizers);
-  checkpoint.restore(tf.train.latest_checkpoit('checkpoints'));
+  checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
   # log
   log = tf.summary.create_file_writer('checkpoints');
   # metrics
   metrics = {key: tf.keras.metrics.Mean(name = key, dtype = tf.float32) for key in dictionary};
   # loss
-  reg_loss = tf.keras.losses.MeanSuaredError();
+  reg_loss = tf.keras.losses.MeanSquaredError();
   cls_loss = tf.keras.losses.SparseCategoricalCrossentropy();
   # train
   while True:
