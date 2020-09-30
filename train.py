@@ -22,6 +22,7 @@ def search_hp(neumf, dataset):
     directory = 'my_dir',
     project_name = 'neumf');
   tuner.search(trainset, epochs = 5, validation_data = testset);
+  neumf.save('neumf.h5');
 
 def train(neumf, dataset):
 
