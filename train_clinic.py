@@ -89,4 +89,5 @@ if __name__ == "__main__":
   
   assert tf.executing_eagerly();
   samples, dictionary = load_dataset();
-  neumf, attr_nets = create_models();
+  neumf, attr_nets = create_models(samples, dictionary);
+  train(neumf, attr_nets, samples, dictionary);
