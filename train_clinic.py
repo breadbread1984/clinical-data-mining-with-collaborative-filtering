@@ -73,6 +73,8 @@ def train(neumf, attr_nets, samples, dictionary):
           loss = cls_loss(observations, preds); # loss.shape = ()
       # report loss
       metrics[key].update_state(loss);
+      # NOTE: to avoid overfit
+      if metrics[key].result() < 0.01: continue;
       with log.as_default():
         tf.summary.scalar(key, metrics[key].result(), step = optimizers[key].iterations);
       print('Step #%d %s Loss: %.6f' % (optimizers[key].iterations, key, metrics[key].result()));
