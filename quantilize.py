@@ -137,6 +137,12 @@ def read(filename):
     sample['Insurance Recode (2007+)'] = labels_collection['Insurance Recode (2007+)'][ir.value];
     sample['Marital status at diagnosis'] = labels_collection['Marital status at diagnosis'][msad.value];
     samples.append(sample);
+  # delete column with only one possible value
+  for key, labels in labels_collection.items():
+    if labels is not None and len(labels) == 2:
+      del labels_collection[key];
+      for sample in samples:
+        del sample[key];
   with open('dict.pkl', 'wb') as f:
     f.write(pickle.dumps(labels_collection));
   with open('dataset.pkl', 'wb') as f:
