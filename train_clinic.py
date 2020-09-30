@@ -47,7 +47,6 @@ def train(neumf, attr_nets, samples, dictionary):
   # train
   while True:
     for jdx, (key, labels) in enumerate(dictionary.items()):
-      print("training " + key);
       users = list();
       items = list();
       observations = list();
