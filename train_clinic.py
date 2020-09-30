@@ -82,8 +82,8 @@ def train(neumf, attr_nets, samples, dictionary):
       optimizers[key].apply_gradients(zip(grads, attr_nets[key].trainable_variables));
       grads = tape.gradient(loss, neumf.trainable_variables);
       optimizers['neumf'].apply_gradients(zip(grads, neumf.trainable_variables));
-      if tf.equal(optimizers[key].iterations % 10 * len(dictionary), 0):
-        checkpoint.save(join('checkpoints', 'ckpt'));
+    # save checkpoint after one epoch
+    checkpoint.save(join('checkpoints', 'ckpt'));
 
 if __name__ == "__main__":
   
