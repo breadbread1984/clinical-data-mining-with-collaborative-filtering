@@ -1,15 +1,17 @@
 #!/usr/bin/python3
 
 from sys import argv;
+from os.path import join;
 import pickle;
 import tensorflow as tf;
 from kerastuner import HyperParameters;
 from kerastuner.tuners import RandomSearch;
 from models import NeuMF;
+from create_dataset import parse_function;
 
 batch_size = 256;
 
-def train(neumf):
+def train(neumf, dataset):
 
   trainset = tf.data.TFRecordDataset(join('datasets', dataset) + '.trainset.tfrecord').repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
   testset = tf.data.TFRecordDataset(join('datasets', dataset) + '.testset.tfrecord').repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
@@ -35,7 +37,7 @@ if __name__ == "__main__":
     print('num_users: %d num_items: %d' % (spec['num_users'], spec['num_items']));
   hp = HyperParameters();
   neumf = NeuMF(spec['num_users'], spec['num_items'], hp.Float('alpha', 0.1, 0.9, step = 0.1), 8, [64,32,16,8]);
-  neumf.compile(optimizer = keras.optimizers.SGD(hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4])), 
+  neumf.compile(optimizer = tf.keras.optimizers.SGD(hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4])), 
                 loss = tf.keras.losses.BinaryCrossentropy(), 
                 metric = tf.keras.metrics.Mean(name = 'loss', dtype = tf.float32));
-  main(neumf);
+  train(neumf, argv[1]);
