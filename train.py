@@ -3,6 +3,7 @@
 from sys import argv;
 import pickle;
 import tensorflow as tf;
+from kerastuner import HyperParameters;
 from kerastuner.tuners import RandomSearch;
 from models import NeuMF;
 
@@ -32,6 +33,7 @@ if __name__ == "__main__":
   with open('datasets/' + argv[1] + '.pkl', 'rb') as f:
     spec = pickle.loads(f.read());
     print('num_users: %d num_items: %d' % (spec['num_users'], spec['num_items']));
+  hp = HyperParameters();
   neumf = NeuMF(spec['num_users'], spec['num_items'], hp.Float('alpha', 0.1, 0.9, step = 0.1), 8, [64,32,16,8]);
   neumf.compile(optimizer = keras.optimizers.SGD(hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4])), 
                 loss = tf.keras.losses.BinaryCrossentropy(), 
