@@ -31,18 +31,39 @@ def MLP(user_num, item_num, units = [20, 10]):
   results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results);
   return tf.keras.Model(inputs = (users, items), outputs = (results, logits));
 
-def NeuMF(user_num, item_num, latent_dim = 10, units = [20, 10]):
+class CustomModel(tf.keras.Model):
 
+  def compile(self, optimizer, loss, metric):
+
+    super(CustomModel, self).compile();
+    self.optimizer = optimizer;
+    self.loss_fn = loss;
+    self.metric_fn = metric;
+
+  def train_step(self, data):
+
+    users, items, labels = data;
+    with tf.GradientTape() as tape:
+      predicts, _ = self([users, items]);
+      loss = self.loss_fn(labels, predicts);
+    grads = tape.gradient(loss, self.trainable_variables);
+    self.optimizer.apply_gradients(zip(grads, self.trainable_variables));
+    self.metric_fn.update_state(loss);
+    return {'loss': loss};
+
+def NeuMF(user_num, item_num, alpha = 0.5, latent_dim = 10, units = [20, 10]):
+
+  assert 0 < alpha < 1;
   users = tf.keras.Input((1,), dtype = tf.int32); # users.shape = (batch, 1)
   items = tf.keras.Input((1,), dtype = tf.int32); # items.shape = (batch, 1)
   gmf = tf.keras.models.load_model('gmf.h5', compile = False) if exists('gmf.h5') else GMF(user_num, item_num, latent_dim);
   mlp = tf.keras.models.load_model('mlp.h5', compile = False) if exists('mlp.h5') else MLP(user_num, item_num, units);
   _, mf_results = gmf([users, items]);
   _, mlp_results = mlp([users, items]);
-  results = tf.keras.layers.Concatenate(axis = -1)([mf_results, mlp_results]);
+  results = tf.keras.layers.Lambda(lambda x, a: tf.concat([a * x[0], (1-a) * x[1]], axis = -1), arguments = {'a': alpha})([mf_results, mlp_results]);
   logits = results;
   results = tf.keras.layers.Dense(units = 1, activation = tf.math.sigmoid, kernel_regularizer = tf.keras.regularizers.L2(), bias_regularizer = tf.keras.regularizers.L2())(results);
-  return tf.keras.Model(inputs = (users, items), outputs = (results, logits));
+  return CustomModel(inputs = (users, items), outputs = (results, logits));
 
 if __name__ == "__main__":
 
