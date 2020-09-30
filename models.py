@@ -57,7 +57,9 @@ def NeuMF(user_num, item_num, alpha = 0.5, latent_dim = 10, units = [20, 10]):
   users = tf.keras.Input((1,), dtype = tf.int32); # users.shape = (batch, 1)
   items = tf.keras.Input((1,), dtype = tf.int32); # items.shape = (batch, 1)
   gmf = tf.keras.models.load_model('gmf.h5', compile = False) if exists('gmf.h5') else GMF(user_num, item_num, latent_dim);
+  gmf._name = 'gmf';
   mlp = tf.keras.models.load_model('mlp.h5', compile = False) if exists('mlp.h5') else MLP(user_num, item_num, units);
+  mlp._name = 'mlp';
   _, mf_results = gmf([users, items]);
   _, mlp_results = mlp([users, items]);
   results = tf.keras.layers.Lambda(lambda x, a: tf.concat([a * x[0], (1-a) * x[1]], axis = -1), arguments = {'a': alpha}, name = "neumf_logits")([mf_results, mlp_results]);
@@ -69,10 +71,8 @@ if __name__ == "__main__":
 
   assert tf.executing_eagerly();
   gmf = GMF(10,100);
-  gmf.save('gmf.h5');
   mlp = MLP(10,100);
-  mlp.save('mlp.h5');
-  neumf = NeuMF(10,100);
+  neumf = NeuMF(10, 100);
   neumf.save('neumf.h5');
   tf.keras.utils.plot_model(model = gmf, to_file = 'GMF.png', show_shapes = True, dpi = 64);
   tf.keras.utils.plot_model(model = mlp, to_file = 'MLP.png', show_shapes = True, dpi = 64);
