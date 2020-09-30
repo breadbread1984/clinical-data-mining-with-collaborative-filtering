@@ -51,6 +51,17 @@ class CustomModel(tf.keras.Model):
     self.metric_fn.update_state(loss);
     return {'loss': loss};
 
+  def test_step(self, data):
+
+    users, items, labels = data;
+    with tf.GradientTape() as tape:
+      predicts, _ = self([users, items]);
+      loss = self.loss_fn(labels, predicts);
+    grads = tape.gradient(loss, self.trainable_variables);
+    self.optimizer.apply_gradients(zip(grads, self.trainable_variables));
+    self.metric_fn.update_state(loss);
+    return {'loss': loss};
+
 def NeuMF(user_num, item_num, alpha = 0.5, latent_dim = 10, units = [20, 10]):
 
   assert 0 < alpha < 1;
