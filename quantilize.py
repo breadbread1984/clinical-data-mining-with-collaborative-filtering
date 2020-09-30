@@ -138,11 +138,13 @@ def read(filename):
     sample['Marital status at diagnosis'] = labels_collection['Marital status at diagnosis'][msad.value];
     samples.append(sample);
   # delete column with only one possible value
+  keys = list();
   for key, labels in labels_collection.items():
     if labels is not None and len(labels) == 2:
-      del labels_collection[key];
+      keys.append(key);
       for sample in samples:
         del sample[key];
+  for key in keys: del labels_collection[key];
   with open('dict.pkl', 'wb') as f:
     f.write(pickle.dumps(labels_collection));
   with open('dataset.pkl', 'wb') as f:
